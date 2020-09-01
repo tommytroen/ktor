@@ -42,22 +42,33 @@ internal class Endpoint(
                     tasks.receive()
                 }
 
-                try {
-                    if (!config.pipelining || task.request.requiresDedicatedConnection()) {
-                        makeDedicatedRequest(task)
-                    } else {
-                        makePipelineRequest(task)
-                    }
-                } catch (cause: Throwable) {
-                    task.response.completeExceptionally(cause)
-                    throw cause
-                }
+                processTask(task)
             }
         } catch (cause: Throwable) {
         } finally {
             deliveryPoint.close()
             tasks.close()
             onDone()
+
+            println("Terminating pipeline")
+            println("${tasks.isEmpty}, ${tasks.isClosedForReceive}")
+            while (!tasks.isClosedForReceive) {
+                val task = tasks.receive()
+                processTask(task)
+            }
+        }
+    }
+
+    private suspend fun processTask(task: RequestTask) {
+        try {
+            if (!config.pipelining || task.request.requiresDedicatedConnection()) {
+                makeDedicatedRequest(task)
+            } else {
+                makePipelineRequest(task)
+            }
+        } catch (cause: Throwable) {
+            task.response.completeExceptionally(cause)
+            throw cause
         }
     }
 
