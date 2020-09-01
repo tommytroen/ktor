@@ -15,7 +15,9 @@ internal data class RequestTask(
     val request: HttpRequestData,
     val response: CompletableDeferred<HttpResponseData>,
     val context: CoroutineContext
-)
+) {
+    override fun toString(): String = hashCode().toString()
+}
 
 internal fun HttpRequestData.requiresDedicatedConnection(): Boolean = listOf(headers, body.headers).any {
     it[HttpHeaders.Connection] == "close" || it.contains(HttpHeaders.Upgrade)

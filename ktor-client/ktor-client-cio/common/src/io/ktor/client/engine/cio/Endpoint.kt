@@ -31,16 +31,19 @@ internal class Endpoint(
     private val address = NetworkAddress(host, port)
 
     private val connections: AtomicInt = atomic(0)
+    val counter = atomic(0)
     private val tasks: Channel<RequestTask> = Channel(Channel.UNLIMITED)
     private val deliveryPoint: Channel<RequestTask> = Channel()
     private val maxEndpointIdleTime: Long = 2 * config.endpoint.connectTimeout
 
+    @OptIn(InternalCoroutinesApi::class)
     private val postman = launch {
         try {
             while (true) {
                 val task = withTimeout(maxEndpointIdleTime) {
                     tasks.receive()
                 }
+                println("counter down $task ${counter.decrementAndGet()}")
 
                 processTask(task)
             }
@@ -50,16 +53,16 @@ internal class Endpoint(
             tasks.close()
             onDone()
 
-            println("Terminating pipeline")
-            println("${tasks.isEmpty}, ${tasks.isClosedForReceive}")
-            while (!tasks.isClosedForReceive) {
-                val task = tasks.receive()
-                processTask(task)
+            println("Terminating pipeline $tasks")
+            for (item in tasks) {
+                println("counter down $item ${counter.decrementAndGet()}")
+                try { processTask(item) } catch (cause: Throwable) {}
             }
         }
     }
 
     private suspend fun processTask(task: RequestTask) {
+        println("PROCESS")
         try {
             if (!config.pipelining || task.request.requiresDedicatedConnection()) {
                 makeDedicatedRequest(task)
@@ -78,7 +81,10 @@ internal class Endpoint(
     ): HttpResponseData {
         val result = CompletableDeferred<HttpResponseData>()
         val task = RequestTask(request, result, callContext)
-        tasks.offer(task)
+
+        println("counter up $task ${counter.incrementAndGet()} $tasks")
+        tasks.send(task)
+        println("counter success")
         return result.await()
     }
 
