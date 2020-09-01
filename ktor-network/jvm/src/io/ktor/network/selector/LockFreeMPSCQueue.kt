@@ -205,7 +205,7 @@ private class LockFreeMPSCQueueCore<E : Any>(private val capacity: Int) {
     private class Placeholder(@JvmField val index: Int)
 
     @Suppress("PrivatePropertyName")
-    internal companion object {
+    companion object {
         internal const val INITIAL_CAPACITY = 8
 
         private const val CAPACITY_BITS = 30

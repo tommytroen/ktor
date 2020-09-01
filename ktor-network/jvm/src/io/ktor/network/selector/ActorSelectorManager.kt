@@ -18,7 +18,7 @@ import kotlin.coroutines.intrinsics.*
  */
 @Suppress("BlockingMethodInNonBlockingContext")
 @KtorExperimentalAPI
-class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport(), Closeable, CoroutineScope {
+public class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport(), Closeable, CoroutineScope {
     @Volatile
     private var selectorRef: Selector? = null
 
@@ -32,34 +32,33 @@ class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport()
     @Volatile
     private var closed = false
 
-    private val mb = LockFreeMPSCQueue<Selectable>()
+    private val messages = LockFreeMPSCQueue<Selectable>()
 
     override val coroutineContext: CoroutineContext = context + CoroutineName("selector")
 
     init {
         launch {
-            val selector = provider.openSelector() ?: error("openSelector() = null")
+            val selector = provider.openSelector() ?: error("Failed to open selector.")
             selectorRef = selector
-            try {
+
+            selector.use {
                 try {
-                    process(mb, selector)
+                    process(messages, it)
                 } catch (t: Throwable) {
                     closed = true
-                    mb.close()
-                    cancelAllSuspensions(selector, t)
+                    messages.close()
+                    cancelAllSuspensions(it, t)
                 } finally {
                     closed = true
-                    mb.close()
+                    messages.close()
                     selectorRef = null
-                    cancelAllSuspensions(selector, null)
+                    cancelAllSuspensions(it, null)
                 }
 
                 while (true) {
-                    val m = mb.removeFirstOrNull() ?: break
-                    cancelAllSuspensions(m, ClosedSendChannelException("Failed to apply interest: selector closed"))
+                    val message = messages.removeFirstOrNull() ?: break
+                    cancelAllSuspensions(message, ClosedSendChannelException("Failed to apply interest: selector closed"))
                 }
-            } finally {
-                selector.close()
             }
         }
     }
@@ -138,7 +137,7 @@ class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport()
      */
     override fun publishInterest(selectable: Selectable) {
         try {
-            if (mb.addLast(selectable)) {
+            if (messages.addLast(selectable)) {
                 if (!continuation.resume(Unit)) {
                     selectWakeup()
                 }
@@ -148,7 +147,6 @@ class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport()
             cancelAllSuspensions(selectable, t)
         }
     }
-
 
     private suspend fun LockFreeMPSCQueue<Selectable>.receiveOrNull(): Selectable? {
         return removeFirstOrNull() ?: receiveOrNullSuspend()
@@ -172,7 +170,7 @@ class ActorSelectorManager(context: CoroutineContext) : SelectorManagerSupport()
      */
     override fun close() {
         closed = true
-        mb.close()
+        messages.close()
         if (!continuation.resume(Unit)) {
             selectWakeup()
         }
