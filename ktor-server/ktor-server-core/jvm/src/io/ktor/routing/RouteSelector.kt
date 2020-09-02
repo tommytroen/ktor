@@ -31,12 +31,22 @@ data class RouteSelectorEvaluation(val succeeded: Boolean,
         /**
          * Quality of [RouteSelectorEvaluation] when a query parameter has matched
          */
-        internal const val qualityQueryParameter = 1.0
+        const val qualityQueryParameter = 1.0
 
         /**
-         * Quality of [RouteSelectorEvaluation] when a parameter has matched
+         * Generic quality of [RouteSelectorEvaluation] to use as reference when some specific parameter has matched
          */
         const val qualityParameter = 0.8
+
+        /**
+         * Quality of [RouteSelectorEvaluation] when a path parameter has matched
+         */
+        const val qualityPathParameter = qualityParameter
+
+        /**
+         * Quality of [RouteSelectorEvaluation] when a HTTP method parameter has matched
+         */
+        const val qualityMethodParameter = qualityParameter
 
         /**
          * Quality of [RouteSelectorEvaluation] when a wildcard has matched
@@ -197,7 +207,7 @@ data class PathSegmentConstantRouteSelector(val value: String) : RouteSelector(R
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+data class PathSegmentParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityPathParameter) {
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex < context.segments.size) {
             val part = context.segments[segmentIndex]
@@ -218,7 +228,7 @@ data class PathSegmentParameterRouteSelector(val name: String, val prefix: Strin
                     return RouteSelectorEvaluation.Failed
 
             val values = parametersOf(name, suffixChecked)
-            return RouteSelectorEvaluation(true, RouteSelectorEvaluation.qualityParameter, values, segmentIncrement = 1)
+            return RouteSelectorEvaluation(true, RouteSelectorEvaluation.qualityPathParameter, values, segmentIncrement = 1)
         }
         return RouteSelectorEvaluation.Failed
     }
@@ -232,7 +242,7 @@ data class PathSegmentParameterRouteSelector(val name: String, val prefix: Strin
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentOptionalParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+data class PathSegmentOptionalParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityPathParameter) {
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex < context.segments.size) {
             val part = context.segments[segmentIndex]
@@ -253,7 +263,7 @@ data class PathSegmentOptionalParameterRouteSelector(val name: String, val prefi
                     return RouteSelectorEvaluation.Missing
 
             val values = parametersOf(name, suffixChecked)
-            return RouteSelectorEvaluation(true, RouteSelectorEvaluation.qualityParameter, values, segmentIncrement = 1)
+            return RouteSelectorEvaluation(true, RouteSelectorEvaluation.qualityPathParameter, values, segmentIncrement = 1)
         }
         return RouteSelectorEvaluation.Missing
     }
@@ -352,7 +362,7 @@ data class AndRouteSelector(val first: RouteSelector, val second: RouteSelector)
  * Evaluates a route against an [HttpMethod]
  * @param method is an instance of [HttpMethod]
  */
-data class HttpMethodRouteSelector(val method: HttpMethod) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+data class HttpMethodRouteSelector(val method: HttpMethod) : RouteSelector(RouteSelectorEvaluation.qualityMethodParameter) {
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (context.call.request.httpMethod == method)
             return RouteSelectorEvaluation.Constant
