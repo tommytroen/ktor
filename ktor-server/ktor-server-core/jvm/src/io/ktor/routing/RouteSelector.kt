@@ -117,10 +117,7 @@ class RootRouteSelector(rootPath: String = "") : RouteSelector(RouteSelectorEval
 
         val parts = parts
         val segments = context.segments
-        if (segments.size < parts.size) {
-            return RouteSelectorEvaluation.Failed
-        }
-        if (hasTrailingSlash != context.hasTrailingSlash) {
+        if (segments.size < parts.size || hasTrailingSlash != context.hasTrailingSlash) {
             return RouteSelectorEvaluation.Failed
         }
 
@@ -190,14 +187,12 @@ data class PathSegmentConstantRouteSelector(
     private val hasTrailingSlash: Boolean
 ) : RouteSelector(RouteSelectorEvaluation.qualityConstant) {
 
-    override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
-        return when {
-            segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash ->
-                RouteSelectorEvaluation.Failed
-            segmentIndex < context.segments.size && context.segments[segmentIndex] == value ->
-                RouteSelectorEvaluation.ConstantPath
-            else -> RouteSelectorEvaluation.Failed
-        }
+    override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation = when {
+        segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash ->
+            RouteSelectorEvaluation.Failed
+        segmentIndex < context.segments.size && context.segments[segmentIndex] == value ->
+            RouteSelectorEvaluation.ConstantPath
+        else -> RouteSelectorEvaluation.Failed
     }
 
     override fun toString(): String = value
