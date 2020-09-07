@@ -11,18 +11,18 @@ import io.ktor.http.*
  *
  * @property parts contains parsed routing path segments
  */
-public class RoutingPath private constructor(val parts: List<RoutingPathSegment>) {
-    public companion object {
+class RoutingPath private constructor(val parts: List<RoutingPathSegment>) {
+    companion object {
         /**
          * A constant for root routing path
          */
-        public val root: RoutingPath = RoutingPath(listOf())
+        val root: RoutingPath = RoutingPath(listOf())
 
         /**
          * Parse the specified [path] and create an instance of [RoutingPath].
          * It handles wildcards and decodes escape characters properly.
          */
-        public fun parse(path: String): RoutingPath {
+        fun parse(path: String): RoutingPath {
             if (path == "/") return root
             val segments = path.splitToSequence("/").filter { it.isNotEmpty() }.map { segment ->
                 when {
@@ -43,12 +43,12 @@ public class RoutingPath private constructor(val parts: List<RoutingPathSegment>
  * @property value - segment text value
  * @property kind - segment kind (constant or parameter)
  */
-public data class RoutingPathSegment(val value: String, val kind: RoutingPathSegmentKind)
+data class RoutingPathSegment(val value: String, val kind: RoutingPathSegmentKind)
 
 /**
  * Possible routing path segment kinds
  */
-public enum class RoutingPathSegmentKind {
+enum class RoutingPathSegmentKind {
     /**
      * Corresponds to constant path segment
      */
