@@ -182,10 +182,13 @@ data class OptionalParameterRouteSelector(val name: String) : RouteSelector(Rout
  * Evaluates a route against a constant path segment
  * @param value is a value of the path segment
  */
-data class PathSegmentConstantRouteSelector(
-    val value: String,
-    private val hasTrailingSlash: Boolean = false
-) : RouteSelector(RouteSelectorEvaluation.qualityConstant) {
+data class PathSegmentConstantRouteSelector(val value: String) : RouteSelector(RouteSelectorEvaluation.qualityConstant) {
+
+    private var hasTrailingSlash: Boolean = false
+
+    public constructor(value: String, hasTrailingSlash: Boolean): this(value) {
+        this.hasTrailingSlash = hasTrailingSlash
+    }
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation = when {
         segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash ->
@@ -196,6 +199,24 @@ data class PathSegmentConstantRouteSelector(
     }
 
     override fun toString(): String = value
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PathSegmentConstantRouteSelector
+
+        if (value != other.value) return false
+        if (hasTrailingSlash != other.hasTrailingSlash) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = value.hashCode()
+        result = 31 * result + hasTrailingSlash.hashCode()
+        return result
+    }
 }
 
 /**
@@ -204,12 +225,13 @@ data class PathSegmentConstantRouteSelector(
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentParameterRouteSelector(
-    val name: String,
-    val prefix: String? = null,
-    val suffix: String? = null,
-    private val hasTrailingSlash: Boolean = false
-) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+data class PathSegmentParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+
+    private var hasTrailingSlash: Boolean = false
+
+    public constructor(name: String, prefix: String? = null, suffix: String? = null, hasTrailingSlash: Boolean): this(name, prefix, suffix) {
+        this.hasTrailingSlash = hasTrailingSlash
+    }
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash) {
@@ -240,6 +262,28 @@ data class PathSegmentParameterRouteSelector(
     }
 
     override fun toString(): String = "${prefix ?: ""}{$name}${suffix ?: ""}"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PathSegmentParameterRouteSelector
+
+        if (name != other.name) return false
+        if (prefix != other.prefix) return false
+        if (suffix != other.suffix) return false
+        if (hasTrailingSlash != other.hasTrailingSlash) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + (prefix?.hashCode() ?: 0)
+        result = 31 * result + (suffix?.hashCode() ?: 0)
+        result = 31 * result + hasTrailingSlash.hashCode()
+        return result
+    }
 }
 
 /**
@@ -248,12 +292,13 @@ data class PathSegmentParameterRouteSelector(
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentOptionalParameterRouteSelector(
-    val name: String,
-    val prefix: String? = null,
-    val suffix: String? = null,
-    private val hasTrailingSlash: Boolean = false
-) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+data class PathSegmentOptionalParameterRouteSelector(val name: String, val prefix: String? = null, val suffix: String? = null) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
+
+    private var hasTrailingSlash: Boolean = false
+
+    public constructor(name: String, prefix: String? = null, suffix: String? = null, hasTrailingSlash: Boolean): this(name, prefix, suffix) {
+        this.hasTrailingSlash = hasTrailingSlash
+    }
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash) {
@@ -284,6 +329,28 @@ data class PathSegmentOptionalParameterRouteSelector(
     }
 
     override fun toString(): String = "${prefix ?: ""}{$name?}${suffix ?: ""}"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PathSegmentOptionalParameterRouteSelector
+
+        if (name != other.name) return false
+        if (prefix != other.prefix) return false
+        if (suffix != other.suffix) return false
+        if (hasTrailingSlash != other.hasTrailingSlash) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + (prefix?.hashCode() ?: 0)
+        result = 31 * result + (suffix?.hashCode() ?: 0)
+        result = 31 * result + hasTrailingSlash.hashCode()
+        return result
+    }
 }
 
 /**
@@ -304,15 +371,18 @@ object PathSegmentWildcardRouteSelector : RouteSelector(RouteSelectorEvaluation.
  * @param name is the name of the parameter to capture values to
  * @property prefix before the tailcard (static text)
  */
-data class PathSegmentTailcardRouteSelector(
-    val name: String = "",
-    val prefix: String = "",
-    private val hasTrailingSlash: Boolean = false
-) : RouteSelector(RouteSelectorEvaluation.qualityTailcard) {
+data class PathSegmentTailcardRouteSelector(val name: String = "", val prefix: String = "") : RouteSelector(RouteSelectorEvaluation.qualityTailcard) {
+
+    private var hasTrailingSlash: Boolean = false
+
+    public constructor(name: String = "", prefix: String = "", hasTrailingSlash: Boolean) : this(name, prefix) {
+        this.hasTrailingSlash = hasTrailingSlash
+    }
 
     init {
         require(prefix.none { it == '/' }) { "Multisegment prefix is not supported"}
     }
+
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (prefix.isNotEmpty()) {
             val segmentText = context.segments.getOrNull(segmentIndex)
@@ -342,6 +412,26 @@ data class PathSegmentTailcardRouteSelector(
     }
 
     override fun toString(): String = "{...}"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PathSegmentTailcardRouteSelector
+
+        if (name != other.name) return false
+        if (prefix != other.prefix) return false
+        if (hasTrailingSlash != other.hasTrailingSlash) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + prefix.hashCode()
+        result = 31 * result + hasTrailingSlash.hashCode()
+        return result
+    }
 }
 
 /**

@@ -239,8 +239,14 @@ fun Route.createRouteFromPath(path: String): Route {
  * Helper object for building instances of [RouteSelector] from path segments
  */
 object PathSegmentSelectorBuilder {
+
     /**
      * Builds a [RouteSelector] to match a path segment parameter with prefix/suffix and a name
+     */
+    fun parseParameter(value: String): RouteSelector =  parseParameter(value, false)
+
+    /**
+     * Builds a [RouteSelector] to match a path segment parameter with prefix/suffix, name and trailing slash if any
      */
     fun parseParameter(value: String, hasTrailingSlash: Boolean): RouteSelector {
         val prefixIndex = value.indexOf('{')
@@ -264,6 +270,11 @@ object PathSegmentSelectorBuilder {
 
     /**
      * Builds a [RouteSelector] to match a constant or wildcard segment parameter
+     */
+    fun parseConstant(value: String): RouteSelector = parseConstant(value, false)
+
+    /**
+     * Builds a [RouteSelector] to match a constant or wildcard segment parameter and trailing slash if any
      */
     fun parseConstant(value: String, hasTrailingSlash: Boolean): RouteSelector = when (value) {
         "*" -> PathSegmentWildcardRouteSelector
