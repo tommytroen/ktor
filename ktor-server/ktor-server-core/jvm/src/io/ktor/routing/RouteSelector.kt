@@ -185,12 +185,10 @@ data class OptionalParameterRouteSelector(val name: String) : RouteSelector(Rout
  * Evaluates a route against a constant path segment
  * @param value is a value of the path segment
  */
-data class PathSegmentConstantRouteSelector internal constructor(
+data class PathSegmentConstantRouteSelector(
     val value: String,
     private val hasTrailingSlash: Boolean
 ) : RouteSelector(RouteSelectorEvaluation.qualityConstant) {
-
-    public constructor(value: String) : this(value, false)
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash) {
@@ -210,14 +208,12 @@ data class PathSegmentConstantRouteSelector internal constructor(
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentParameterRouteSelector internal constructor(
+data class PathSegmentParameterRouteSelector(
     val name: String,
     val prefix: String? = null,
     val suffix: String? = null,
     private val hasTrailingSlash: Boolean
 ) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
-
-    constructor(value: String, prefix: String? = null, suffix: String? = null) : this(value, prefix, suffix, false)
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash) {
@@ -256,14 +252,12 @@ data class PathSegmentParameterRouteSelector internal constructor(
  * @param prefix is an optional suffix
  * @param suffix is an optional prefix
  */
-data class PathSegmentOptionalParameterRouteSelector internal constructor(
+data class PathSegmentOptionalParameterRouteSelector(
     val name: String,
     val prefix: String? = null,
     val suffix: String? = null,
     private val hasTrailingSlash: Boolean
 ) : RouteSelector(RouteSelectorEvaluation.qualityParameter) {
-
-    public constructor(value: String, prefix: String? = null, suffix: String? = null) : this(value, prefix, suffix, false)
 
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation {
         if (segmentIndex == context.segments.lastIndex && hasTrailingSlash != context.hasTrailingSlash) {
@@ -314,13 +308,11 @@ object PathSegmentWildcardRouteSelector : RouteSelector(RouteSelectorEvaluation.
  * @param name is the name of the parameter to capture values to
  * @property prefix before the tailcard (static text)
  */
-data class PathSegmentTailcardRouteSelector internal constructor(
+data class PathSegmentTailcardRouteSelector(
     val name: String = "",
     val prefix: String = "",
     private val hasTrailingSlash: Boolean
 ) : RouteSelector(RouteSelectorEvaluation.qualityTailcard) {
-
-    public constructor(name: String = "", prefix: String = "") : this(name, prefix, false)
 
     init {
         require(prefix.none { it == '/' }) { "Multisegment prefix is not supported"}
