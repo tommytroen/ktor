@@ -15,6 +15,10 @@ internal class TestLogger(private vararg val expectedLog: String) : Logger {
         log += message
     }
 
+    fun reset() {
+        log.clear()
+    }
+
     fun verify() {
         var expectedIndex = 0
         var actualIndex = 0
@@ -47,7 +51,19 @@ internal class TestLogger(private vararg val expectedLog: String) : Logger {
                 continue
             }
 
-            assertEquals(expected, actual)
+            if (expected != actual) {
+                println(">>> Expected log:")
+                expectedLog.forEach {
+                    println(it)
+                }
+
+                println(">>> Actual log:")
+                log.forEach {
+                    println(it)
+                }
+
+                fail("Expected log doesn't match actual at lines: expected $expectedIndex, actual $actualIndex")
+            }
         }
 
         val message = StringBuilder()
