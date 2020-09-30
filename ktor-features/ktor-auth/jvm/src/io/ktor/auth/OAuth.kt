@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 JetBrains s.r.o and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2014-2020 JetBrains s.r.o and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package io.ktor.auth
@@ -8,9 +8,9 @@ import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.util.pipeline.*
 import io.ktor.response.*
 import io.ktor.util.*
+import io.ktor.util.pipeline.*
 import kotlinx.coroutines.*
 import org.slf4j.*
 import java.io.*
@@ -79,7 +79,9 @@ public sealed class OAuthServerSettings(public val name: String, public val vers
         public val accessTokenUrl: String,
 
         public val consumerKey: String,
-        public val consumerSecret: String
+        public val consumerSecret: String,
+
+        public val accessTokenInterceptor: HttpRequestBuilder.() -> Unit = {}
     ) : OAuthServerSettings(name, OAuthVersion.V10a)
 
     /**
@@ -94,6 +96,7 @@ public sealed class OAuthServerSettings(public val name: String, public val vers
      * @property passParamsInURL whether to pass request parameters in POST requests in URL instead of body.
      * @property nonceManager to be used to produce and verify nonce values
      * @property authorizeUrlInterceptor an interceptor function to customize authorization URL
+     * @property accessTokenInterceptor an interceptor function to customize access token request
      */
     public class OAuth2ServerSettings(
         name: String,
@@ -109,7 +112,8 @@ public sealed class OAuthServerSettings(public val name: String, public val vers
         public val nonceManager: NonceManager = GenerateOnlyNonceManager,
 
         public val authorizeUrlInterceptor: URLBuilder.() -> Unit = {},
-        public val passParamsInURL: Boolean = false
+        public val passParamsInURL: Boolean = false,
+        public val accessTokenInterceptor: HttpRequestBuilder.() -> Unit = {}
     ) : OAuthServerSettings(name, OAuthVersion.V20)
 }
 
@@ -217,7 +221,7 @@ public suspend fun PipelineContext<Unit, ApplicationCall>.oauthRespondRedirect(
 }
 
 /**
- * Handle OAuth callback
+ * Handle OAuth callback. Usually it leads to requesting an access token.
  */
 @KtorExperimentalAPI
 public suspend fun PipelineContext<Unit, ApplicationCall>.oauthHandleCallback(
@@ -226,7 +230,26 @@ public suspend fun PipelineContext<Unit, ApplicationCall>.oauthHandleCallback(
     provider: OAuthServerSettings,
     callbackUrl: String,
     loginPageUrl: String,
-    configure: HttpRequestBuilder.() -> Unit = {},
+    block: suspend (OAuthAccessTokenResponse) -> Unit
+) {
+    @Suppress("DEPRECATION")
+    oauthHandleCallback(client, dispatcher, provider, callbackUrl, loginPageUrl, {}, block)
+}
+
+/**
+ * Handle OAuth callback.
+ */
+@Deprecated(
+    "Specifying an extra configuration function will be deprecated. " +
+        "Please provide it via OAuthServerSettings."
+)
+public suspend fun PipelineContext<Unit, ApplicationCall>.oauthHandleCallback(
+    client: HttpClient,
+    dispatcher: CoroutineDispatcher,
+    provider: OAuthServerSettings,
+    callbackUrl: String,
+    loginPageUrl: String,
+    configure: HttpRequestBuilder.() -> Unit,
     block: suspend (OAuthAccessTokenResponse) -> Unit
 ) {
     when (provider) {
