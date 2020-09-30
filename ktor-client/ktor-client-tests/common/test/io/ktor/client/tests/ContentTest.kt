@@ -139,6 +139,7 @@ class ContentTest : ClientLoader() {
     }
 
     @Test
+    @Ignore
     fun testMultipartFormData() = clientTests(listOf("Js")) {
         val data = {
             formData {
